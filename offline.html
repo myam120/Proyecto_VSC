@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>PWA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <style>
+        body {
+            color: whitesmoke;
+            background-color: darkred;
+            font-family: Arial, Helvetica, sans-serif;
+            margin-left: 5%;
+            margin-right: 5%;
+            text-align: center;
+            line-height: 50px;
+        }
+    </style>
+    <script>
+        window.addEventListener('online', () => { location.reload();
+        });
+    </script>
+</head>
+<body>
+    <h1>Sin conexión a internet</h1>
+    <p>Esta PWA necesita internet para funcionar. Verifica tu conectividad para poder seguir utilizándola.</p>
+    <div style="text-align: center;">
+        <img src="/icons/logo.png" width="20%" alt="Icono sin conexión">
+    </div>
+</body>
+</html>
