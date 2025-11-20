@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuenta - MegaCard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="upup.js"></script>
+  <script defer src="offline.js"></script>
+  <script defer src="instalar.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+    }
+
+    .card-digital {
+      background: #ff9800;
+      border-radius: 16px;
+      padding: 20px;
+      color: #121212;
+      text-align: center;
+    }
+
+    .card-digital .phone {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .section-title {
+      color: #ffc107;
+      margin-top: 20px;
+    }
+
+    .premio-img {
+      max-width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-warning">
+    <div class="container-fluid">
+      <img src="./images/logo-Photoroom.png" width="200px" alt="">
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="index.html">Inicio</a>
+          </li>
+          <li>
+            <a class="nav-link active" aria-current="page" href="cuenta.html">Cuenta</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="historial_canjes.php">Historial de canjes</a>
+          </li>
+        </ul>
+      </div>
+      <div class="d-flex">
+        <span class="navbar-text me-3 text-white">
+        </span>
+        <a href="login.html" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <h2>Mi cuenta</h2>
+    <!-- FOTO DE PERFIL -->
+    <div class="text-center mb-4">
+
+      <img id="fotoPerfil" src="images/default-profile.png" class="rounded-circle border border-warning"
+        style="width: 140px; height: 140px; object-fit: cover;">
+
+      <br><br>
+
+      <button class="btn btn-warning btn-sm" id="btnFotoPerfil">
+        Tomar foto
+      </button>
+
+      <input type="file" id="inputFotoCamara" accept="image/*" capture="user" style="display: none;">
+    </div>
+
+  </div>
+  <!-- Footer -->
+  <footer class="bg-dark text-center py-3 mt-auto">
+    <small>© 2025 Programa de Fidelización. Todos los derechos reservados.</small>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- ========== SCRIPT PARA TOMAR FOTO DE PERFIL ========== -->
+<script>
+  const inputCamara = document.getElementById("inputFotoCamara");
+  const imgPerfil = document.getElementById("fotoPerfil");
+  const btnFoto = document.getElementById("btnFotoPerfil");
+
+  // Botón que abre la cámara
+  btnFoto.addEventListener("click", () => {
+      inputCamara.click();
+  });
+
+  // Cuando el usuario toma la foto
+  inputCamara.addEventListener("change", (event) => {
+      const archivo = event.target.files[0];
+      if (!archivo) return;
+
+      const urlFoto = URL.createObjectURL(archivo);
+      imgPerfil.src = urlFoto;
+
+      // Convertir a base64 para guardar en tu BD (opcional)
+      convertirABase64(archivo).then(base64 => {
+          console.log("FOTO EN BASE64:", base64);
+
+          // Aquí puedes enviarla a tu servidor o supabase
+          // fetch("guardar_foto.php", { method:"POST", body: JSON.stringify({foto: base64}) });
+      });
+  });
+
+  function convertirABase64(file) {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = e => reject(e);
+      });
+  }
+</script>
+
+  <script>
+    const publicVapidKey = "TU_CLAVE_PUBLICA_VAPID"; // reemplaza si tienes servidor
+
+    async function initPush() {
+      if (!('serviceWorker' in navigator)) {
+        alert('Service Worker no soportado en este navegador');
+        return;
+      }
+
+      // IMPORTANTE: usar ruta relativa
+      const register = await navigator.serviceWorker.register('./sw.js');
+      console.log('Service Worker registrado con scope:', register.scope);
+
+      let subscription = await register.pushManager.getSubscription();
+      if (subscription) {
+        document.getElementById('status').textContent = 'Estado: suscrito';
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Permiso de notificaciones denegado');
+        return;
+      }
+
+      subscription = await register.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+      });
+
+      document.getElementById('status').textContent = 'Estado: suscrito';
+      console.log('Suscripción creada:', subscription);
+
+      // GitHub Pages no tiene backend, esto fallará 
+      try {
+        await fetch('./subscribe', {
+          method: 'POST',
+          body: JSON.stringify(subscription),
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (err) {
+        console.log('No se pudo enviar suscripción (sin servidor).');
+      }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+    }
+
+    window.addEventListener('load', initPush);
+  </script>
+
+</body>
+
+</html>
